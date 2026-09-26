@@ -3,305 +3,279 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>UEMA Wi-Fi Fast Access - Automação Segura de Conexão</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <title>UEMA FastAccess — Conexão automática ao Wi-Fi da UEMA</title>
+  <meta name="description" content="Aplicativo que autentica automaticamente na rede Wi-Fi da UEMA, sem precisar digitar login e senha a cada troca de bloco.">
   <style>
     :root {
-      --primary: #1e526f;
-      --primary-hover: #163e54;
-      --accent: #10b981;
-      --accent-hover: #059669;
-      --bg: #0f172a;
-      --card-bg: #1e293b;
-      --border: #334155;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
+      --uema-blue: #1e526f;
+      --uema-blue-dark: #163e54;
+      --bg: #f4f6f8;
+      --card: #ffffff;
+      --border: #dde3e8;
+      --text: #1c2b33;
+      --muted: #5c6b76;
+      --warn-bg: #fdf3e3;
+      --warn-border: #e8c87a;
+      --warn-text: #7a5b14;
     }
 
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-      font-family: 'Inter', sans-serif;
-    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      background-color: var(--bg);
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
       color: var(--text);
-      line-height: 1.6;
+      line-height: 1.55;
     }
 
-    header {
-      padding: 24px 8%;
+    .topbar {
+      background: var(--uema-blue);
+      color: #fff;
+      padding: 14px 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .logo {
-      font-size: 1.25rem;
-      font-weight: 800;
-      color: var(--text);
-      display: flex;
-      align-items: center;
+      flex-wrap: wrap;
       gap: 10px;
     }
 
-    .badge-status {
-      background: rgba(16, 185, 129, 0.15);
-      color: var(--accent);
-      border: 1px solid var(--accent);
-      padding: 4px 10px;
-      border-radius: 999px;
-      font-size: 0.75rem;
+    .topbar .brand {
       font-weight: 600;
+      font-size: 1.05rem;
+      letter-spacing: 0.2px;
     }
 
-    .hero {
-      padding: 80px 8% 60px;
-      text-align: center;
-      max-width: 900px;
-      margin: 0 auto;
+    .topbar a {
+      color: #fff;
+      text-decoration: none;
+      font-size: 0.9rem;
+      border: 1px solid rgba(255,255,255,0.45);
+      border-radius: 6px;
+      padding: 6px 14px;
     }
 
-    .hero h1 {
-      font-size: 2.8rem;
-      font-weight: 800;
-      margin-bottom: 20px;
-      line-height: 1.2;
-      background: linear-gradient(135deg, #ffffff 30%, #94a3b8 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .topbar a:hover { background: rgba(255,255,255,0.12); }
+
+    .container { max-width: 960px; margin: 0 auto; padding: 48px 24px 64px; }
+
+    .intro { max-width: 640px; margin-bottom: 40px; }
+
+    .intro h1 {
+      font-size: 1.7rem;
+      font-weight: 650;
+      margin-bottom: 12px;
     }
 
-    .hero p {
-      font-size: 1.15rem;
-      color: var(--text-muted);
-      margin-bottom: 35px;
+    .intro p { color: var(--muted); }
+
+    h2.section {
+      font-size: 1.05rem;
+      font-weight: 650;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+      color: var(--uema-blue-dark);
+      margin: 40px 0 16px;
     }
 
-    .downloads-grid {
+    .downloads {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-      gap: 24px;
-      padding: 0 8% 60px;
-      max-width: 1200px;
-      margin: 0 auto;
+      grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+      gap: 16px;
     }
 
     .card {
-      background-color: var(--card-bg);
+      background: var(--card);
       border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px 24px;
+      border-radius: 10px;
+      padding: 22px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
-      transition: transform 0.2s, border-color 0.2s;
+      gap: 14px;
     }
 
-    .card:hover {
-      transform: translateY(-4px);
-      border-color: var(--accent);
+    .card h3 { font-size: 1.1rem; font-weight: 650; }
+
+    .card .platform {
+      font-size: 0.8rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    .card-icon {
-      font-size: 2.5rem;
-      margin-bottom: 16px;
-    }
-
-    .card h3 {
-      font-size: 1.4rem;
-      margin-bottom: 8px;
-    }
-
-    .card p {
-      color: var(--text-muted);
-      font-size: 0.95rem;
-      margin-bottom: 24px;
-      flex-grow: 1;
-    }
+    .card p { color: var(--muted); font-size: 0.93rem; flex-grow: 1; }
 
     .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      padding: 14px 20px;
-      border-radius: 10px;
-      font-weight: 600;
+      display: block;
+      text-align: center;
       text-decoration: none;
-      cursor: pointer;
-      transition: background 0.2s;
-      border: none;
+      padding: 11px 16px;
+      border-radius: 7px;
+      font-weight: 600;
+      font-size: 0.95rem;
     }
 
-    .btn-primary {
-      background-color: var(--accent);
-      color: #042f2e;
+    .btn-main { background: var(--uema-blue); color: #fff; }
+    .btn-main:hover { background: var(--uema-blue-dark); }
+
+    .btn-outline {
+      border: 1px solid var(--uema-blue);
+      color: var(--uema-blue);
+    }
+    .btn-outline:hover { background: #eaf1f5; }
+
+    .note {
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+      border-left: 4px solid var(--warn-border);
+      color: var(--warn-text);
+      border-radius: 6px;
+      padding: 14px 16px;
+      font-size: 0.9rem;
+      margin-top: 16px;
     }
 
-    .btn-primary:hover {
-      background-color: var(--accent-hover);
-    }
-
-    .btn-secondary {
-      background-color: transparent;
+    ol.steps { padding-left: 22px; color: var(--muted); font-size: 0.95rem; }
+    ol.steps li { margin-bottom: 8px; }
+    ol.steps code {
+      background: #eceff1;
+      border-radius: 4px;
+      padding: 1px 6px;
+      font-size: 0.85em;
       color: var(--text);
+    }
+
+    table.compare {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.93rem;
+      background: var(--card);
       border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
     }
 
-    .btn-secondary:hover {
-      background-color: rgba(255, 255, 255, 0.05);
-      border-color: var(--text-muted);
-    }
-
-    .security-section {
-      background-color: #131d31;
-      padding: 70px 8%;
-      border-top: 1px solid var(--border);
+    table.compare th, table.compare td {
+      text-align: left;
+      padding: 12px 16px;
       border-bottom: 1px solid var(--border);
     }
 
-    .section-title {
-      text-align: center;
-      font-size: 2rem;
-      margin-bottom: 40px;
+    table.compare th {
+      background: #eef2f5;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--muted);
     }
 
-    .security-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 30px;
-      max-width: 1100px;
-      margin: 0 auto;
-    }
-
-    .sec-item {
-      background: var(--card-bg);
-      padding: 24px;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
-
-    .sec-item h4 {
-      font-size: 1.1rem;
-      margin-bottom: 10px;
-      color: var(--accent);
-    }
-
-    .sec-item p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-    }
+    table.compare tr:last-child td { border-bottom: none; }
 
     footer {
-      padding: 40px 8%;
+      border-top: 1px solid var(--border);
+      padding: 24px;
       text-align: center;
-      color: var(--text-muted);
-      font-size: 0.9rem;
+      color: var(--muted);
+      font-size: 0.85rem;
     }
 
-    footer a {
-      color: var(--accent);
-      text-decoration: none;
-    }
+    footer a { color: var(--uema-blue); }
   </style>
 </head>
 <body>
 
-  <header>
-    <div class="logo">
-      ⚡ UEMA FastAccess
-      <span class="badge-status">v1.0.0 Oficial</span>
-    </div>
-    <a href="https://github.com/1PedroGabriel/uema_internet_fast_acces" class="btn-secondary" style="padding: 8px 16px; border-radius: 8px; font-size: 0.85rem; text-decoration: none;" id="repoLink">
-      Ver no GitHub
-    </a>
-  </header>
+  <div class="topbar">
+    <span class="brand">UEMA FastAccess</span>
+    <a href="https://github.com/1PedroGabriel/uema_internet_fast_acces">Código-fonte no GitHub</a>
+  </div>
 
-  <main>
-    <section class="hero">
-      <h1>Wi-Fi da UEMA sem logins repetitivos.</h1>
+  <main class="container">
+
+    <div class="intro">
+      <h1>Conecte-se ao Wi-Fi da UEMA sem redigitar login e senha</h1>
       <p>
-        O UEMA FastAccess conecta seus dispositivos automaticamente à rede institucional ao trocar de bloco ou prédio no campus. Sem telas de navegador chatas e com segurança de nível de hardware.
+        Aplicativo gratuito e de código aberto que autentica automaticamente na rede
+        institucional quando você troca de bloco ou prédio no campus. Cadastre suas
+        credenciais do SIGUEMA uma única vez — elas ficam guardadas no cofre
+        criptografado do próprio aparelho.
       </p>
-    </section>
+    </div>
 
-    <section class="downloads-grid">
-      <!-- Windows Card -->
+    <h2 class="section">Download</h2>
+
+    <div class="downloads">
       <div class="card">
-        <div>
-          <div class="card-icon">💻</div>
-          <h3>Windows PC</h3>
-          <p>Executável silencioso com inicialização automática e cofre protegido pelo Windows Credential Manager.</p>
-        </div>
-        <div>
-          <a href="https://github.com/1PedroGabriel/uema_internet_fast_acces/releases/latest/download/UEMA_Internet_FastAccess.exe" class="btn btn-primary" id="winBtn">
-            Baixar .EXE (Windows)
-          </a>
-        </div>
+        <span class="platform">Computador</span>
+        <h3>Windows</h3>
+        <p>Roda em segundo plano e autentica sozinho ao entrar na rede UEMA. Inicia junto com o Windows.</p>
+        <a class="btn btn-main" href="https://github.com/1PedroGabriel/uema_internet_fast_acces/releases/latest/download/UEMA_Internet_FastAccess.exe">Baixar para Windows (.exe)</a>
       </div>
 
-      <!-- Android Card -->
       <div class="card">
-        <div>
-          <div class="card-icon">🤖</div>
-          <h3>Android</h3>
-          <p>Aplicativo nativo com fluxo "1-Tap Connect" e armazenamento no Android Keystore cifrado por hardware.</p>
-        </div>
-        <div>
-          <a href="https://github.com/1PedroGabriel/uema_internet_fast_acces/releases/latest/download/app-release.apk" class="btn btn-primary" id="androidBtn">
-            Baixar .APK (Android)
-          </a>
-        </div>
+        <span class="platform">Celular</span>
+        <h3>Android</h3>
+        <p>Abra o app ao chegar ao campus: a conexão é liberada automaticamente com as credenciais salvas.</p>
+        <a class="btn btn-main" href="https://github.com/1PedroGabriel/uema_internet_fast_acces/releases/latest/download/app-release.apk">Baixar para Android (.apk)</a>
       </div>
 
-      <!-- iOS Card -->
       <div class="card">
-        <div>
-          <div class="card-icon">🍎</div>
-          <h3>iPhone (iOS)</h3>
-          <p>Pacote para instalação segura via AltStore ou Sideloadly com credenciais no Apple Keychain.</p>
-        </div>
-        <div>
-          <a href="#ios-instructions" class="btn btn-secondary">
-            Ver Instruções iOS
-          </a>
-        </div>
+        <span class="platform">Celular</span>
+        <h3>iPhone</h3>
+        <p>Disponível como pacote para instalação via AltStore ou Sideloadly, por exigência da Apple.</p>
+        <a class="btn btn-outline" href="https://github.com/1PedroGabriel/uema_internet_fast_acces/releases">Ver versões disponíveis</a>
       </div>
-    </section>
+    </div>
 
-    <!-- Security Highlights -->
-    <section class="security-section">
-      <h2 class="section-title">🔒 Engenharia de Segurança & Privacidade</h2>
-      <div class="security-grid">
-        <div class="sec-item">
-          <h4>Zero Plain-Text</h4>
-          <p>Senhas nunca são salvas em texto simples ou bancos de dados locais. Tudo fica protegido nos cofres criptográficos nativos do SO.</p>
-        </div>
-        <div class="sec-item">
-          <h4>Proteção Anti-Evil Twin</h4>
-          <p>O aplicativo só envia credenciais em rede privada e valida se o portal descoberto é um IP interno (10.x/172.16-31.x/192.168.x). URLs suspeitas são rejeitadas na hora.</p>
-        </div>
-        <div class="sec-item">
-          <h4>Código 100% Aberto</h4>
-          <p>Sem servidores intermediários, sem anúncios e sem telemetria. Todo o tráfego ocorre estritamente entre o seu aparelho e o roteador da UEMA.</p>
-        </div>
-        <div class="sec-item">
-          <h4>Disjuntor de Rede (Circuit Breaker)</h4>
-          <p>Após 3 falhas, o robô suspende requisições para proteger sua conta contra bloqueios temporários de firewall no campus.</p>
-        </div>
-      </div>
-    </section>
+    <div class="note">
+      <strong>Windows:</strong> ao executar pela primeira vez, o SmartScreen pode exibir
+      "O Windows protegeu o computador" (o app não possui certificado pago de assinatura).
+      Clique em <em>Mais informações → Executar mesmo assim</em>.<br>
+      <strong>Android:</strong> autorize a instalação de apps de fontes externas quando solicitado.
+    </div>
+
+    <h2 class="section">Como usar</h2>
+
+    <ol class="steps">
+      <li>Instale e abra o aplicativo no computador ou no celular.</li>
+      <li>Informe seu usuário e senha do <strong>SIGUEMA</strong> (os mesmos do portal acadêmico).</li>
+      <li>Pronto. Ao entrar na rede <code>UEMA</code>, a autenticação acontece automaticamente.</li>
+      <li>Se trocar a senha no SIGUEMA, o app detecta a rejeição e pede o recadastro.</li>
+    </ol>
+
+    <h2 class="section">Onde suas credenciais ficam</h2>
+
+    <table class="compare">
+      <tr>
+        <th>Plataforma</th>
+        <th>Armazenamento</th>
+      </tr>
+      <tr>
+        <td>Windows</td>
+        <td>Credential Manager do Windows (protegido por DPAPI, vinculado ao seu usuário)</td>
+      </tr>
+      <tr>
+        <td>Android</td>
+        <td>Android Keystore — criptografia gerenciada por hardware</td>
+      </tr>
+      <tr>
+        <td>iPhone</td>
+        <td>Apple Keychain, acessível apenas pelo próprio app</td>
+      </tr>
+    </table>
+
+    <div class="note">
+      <strong>Transparência:</strong> o portal de autenticação da UEMA recebe as credenciais
+      por HTTP sem criptografia — uma limitação da infraestrutura da universidade, não do app.
+      O aplicativo reduz os riscos enviando os dados apenas em rede privada e validando o
+      destino, mas a correção definitiva (HTTPS ou 802.1X) depende da CTIC/PROINFRA.
+      Todo o código é aberto e auditável no repositório.
+    </div>
+
   </main>
 
   <footer>
-    <p>Projeto acadêmico independente desenvolvido para a comunidade da Universidade Estadual do Maranhão (UEMA).</p>
-    <p style="margin-top: 8px;">Código aberto sob licença MIT • Hospedado via GitHub Pages</p>
+    Projeto acadêmico independente, sem vínculo oficial com a UEMA ·
+    Licença MIT ·
+    <a href="https://github.com/1PedroGabriel/uema_internet_fast_acces">github.com/1PedroGabriel/uema_internet_fast_acces</a>
   </footer>
 
 </body>
