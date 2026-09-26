@@ -1,0 +1,23 @@
+name: uema_fast_access
+description: Aplicativo para login rápido no Wi-Fi (Captive Portal) da UEMA.
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  # Para requisições de rede
+  http: ^1.1.0
+  # Para salvar senhas de forma criptografada no Android/iOS
+  flutter_secure_storage: ^9.0.0
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^2.0.0
+
+flutter:
+  uses-material-design: true

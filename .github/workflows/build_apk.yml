@@ -1,0 +1,66 @@
+name: Build Executables (Android & iOS)
+
+# O robô será ativado automaticamente ao enviar o código, ou clicando no botão "Run workflow"
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch: 
+
+jobs:
+  # ==========================================
+  # 1. GERA O EXECUTÁVEL DO ANDROID (.APK)
+  # ==========================================
+  build-android:
+    name: Build Android APK
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          
+      - name: Instalar Dependências
+        run: cd mobile_app && flutter pub get
+        
+      - name: Compilar APK Android
+        run: cd mobile_app && flutter build apk --release
+        
+      - name: Disponibilizar APK para Download
+        uses: actions/upload-artifact@v3
+        with:
+          name: UEMA_FastAccess_Android_APK
+          path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
+
+  # ==========================================
+  # 2. GERA O EXECUTÁVEL DO IPHONE (iOS)
+  # ==========================================
+  build-ios:
+    name: Build iOS App
+    runs-on: macos-latest # O GitHub empresta um Mac na nuvem para compilar
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.19.0'
+          channel: 'stable'
+          
+      - name: Instalar Dependências
+        run: cd mobile_app && flutter pub get
+        
+      - name: Compilar App iOS (Sem assinatura da Apple)
+        run: cd mobile_app && flutter build ios --release --no-codesign
+        
+      - name: Zipar Executável iOS
+        run: cd mobile_app/build/ios/iphoneos && zip -r Runner.zip Runner.app
+        
+      - name: Disponibilizar iOS para Download
+        uses: actions/upload-artifact@v3
+        with:
+          name: UEMA_FastAccess_iOS_APP
+          path: mobile_app/build/ios/iphoneos/Runner.zip
