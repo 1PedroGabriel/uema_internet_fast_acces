@@ -5,10 +5,11 @@ ERROR_ALREADY_EXISTS = 183
 
 class SingleInstance:
     """
-    Garante que apenas uma única instância do processo rode por vez no Windows,
-    usando um Named Mutex no nível do Kernel.
+    Garante que apenas uma única instância do processo rode por vez no Windows.
+    Utiliza o namespace 'Local\\' para não exigir privilégios de Administrador,
+    evitando erros de ACCESS_DENIED em contas de usuário padrão.
     """
-    def __init__(self, mutex_name="Global\\UEMA_Internet_FastAccess_Mutex"):
+    def __init__(self, mutex_name="Local\\UEMA_Internet_FastAccess_Mutex"):
         self.mutex_name = mutex_name
         self.mutex = None
 

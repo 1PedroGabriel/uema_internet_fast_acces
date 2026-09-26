@@ -1,5 +1,6 @@
 import subprocess
 import requests
+import socket
 import re
 import sys
 import time
@@ -13,6 +14,33 @@ PRIMARY_PROBE = "http://www.msftconnecttest.com/connecttest.txt"
 SECONDARY_PROBE = "http://clients3.google.com/generate_204"
 USER_FIELD = "user"
 PASS_FIELD = "password"
+
+def is_in_uema_subnet():
+    """
+    SEGURANÇA (Anti-Evil Twin / Rogue AP):
+    Como o portal da UEMA recebe a senha por HTTP puro no IP 172.25.50.10,
+    precisamos garantir que a máquina está fisicamente na sub-rede legítima
+    da universidade (172.25.x.x) antes de disparar qualquer credencial.
+    """
+    try:
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        # Identifica a interface de rede que tem rota para o gateway da UEMA
+        s.connect(("172.25.50.10", 80))
+        local_ip = s.getsockname()[0]
+        s.close()
+        
+        # Verifica se o IP local obtido via DHCP pertence à rede institucional
+        if local_ip.startswith("172.25."):
+            return True
+        else:
+            logger.warning(
+                f"[SEGURANÇA] IP local ({local_ip}) não pertence à faixa UEMA (172.25.x.x). "
+                "Possível rede falsa ou Evil Twin. Autenticação cancelada."
+            )
+            return False
+    except Exception as e:
+        logger.debug(f"Falha ao validar sub-rede local: {e}")
+        return False
 
 def get_current_ssid():
     """
@@ -48,7 +76,6 @@ def check_internet():
     2. Em caso de falha de resolução DNS, recorre ao probe secundário do Google.
     Retorna True se há conectividade real à internet.
     """
-    # Tentativa 1: Probe padrão
     try:
         response = requests.get(PRIMARY_PROBE, timeout=4)
         if response.status_code == 200 and "Microsoft Connect Test" in response.text:
@@ -56,7 +83,6 @@ def check_internet():
     except requests.exceptions.RequestException:
         pass
 
-    # Tentativa 2 (Failover de DNS): Probe alternativo
     try:
         response = requests.get(SECONDARY_PROBE, timeout=4)
         if response.status_code == 204:
@@ -74,17 +100,21 @@ def is_captive_portal():
     if check_internet():
         return False
 
-    # Pequena pausa caso a interface acabou de conectar e o DHCP esteja atribuindo IP
     time.sleep(2)
     return not check_internet()
 
 def do_login(username, password):
     """
     Realiza o fluxo completo de autenticação com handshake:
-    1. Acessa a página de redirecionamento para capturar cookies/sessão inicial.
-    2. Submete o POST com o cabeçalho Referer correto para evitar bloqueios 403.
-    3. Confirma se a internet foi liberada após o envio.
+    1. Valida se a sub-rede local é legítima (Anti-Evil Twin).
+    2. Acessa a página de redirecionamento para capturar cookies/sessão.
+    3. Submete o POST com o cabeçalho Referer correto para evitar bloqueios 403.
+    4. Confirma se a internet foi liberada após o envio.
     """
+    # Verificação de segurança de rede
+    if not is_in_uema_subnet():
+        return False
+
     session = requests.Session()
     session.headers.update({
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -93,26 +123,22 @@ def do_login(username, password):
 
     try:
         logger.info(f"Iniciando handshake com o gateway da UEMA ({LOGIN_URL})...")
-        # 1. Visita o portal para estabelecer sessão e pegar cookies
         try:
             session.get(PRIMARY_PROBE, timeout=5, allow_redirects=True)
         except requests.exceptions.RequestException:
             pass
 
-        # 2. Prepara o payload oficial
         payload = {
             USER_FIELD: username,
             PASS_FIELD: password,
         }
 
-        # 3. Dispara o POST de autenticação
         response = session.post(LOGIN_URL, data=payload, timeout=8)
         logger.info(f"POST enviado. Código de resposta HTTP: {response.status_code}")
         
-        # 4. Aguarda 2 segundos para o roteador UEMA aplicar as regras no firewall
+        # Pausa para aplicação das regras no firewall
         time.sleep(2)
 
-        # 5. Validação real de liberação de tráfego
         success = check_internet()
         if success:
             logger.info("Internet confirmada liberada após autenticação.")
