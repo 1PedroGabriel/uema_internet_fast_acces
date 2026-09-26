@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    tags:
+      - 'v*'
   workflow_dispatch:
 
 jobs:
@@ -32,12 +34,8 @@ jobs:
       - name: Gerar Estrutura Nativa e Dependências
         run: |
           cd mobile_app
-          # Gera o projeto Android/iOS oficial se não existir
           flutter create --org br.uema.fastaccess --project-name uema_fast_access .
-          
-          # Injeta permissão de tráfego HTTP limpo no AndroidManifest.xml (necessário para o IP 172.25.50.10)
           sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
-          
           flutter pub get
 
       - name: Compilar APK Android (Release)
@@ -71,8 +69,6 @@ jobs:
         run: |
           cd mobile_app
           flutter create --org br.uema.fastaccess --project-name uema_fast_access .
-          
-          # Injeta permissão de tráfego HTTP no Info.plist do iOS (ATS Exception)
           python3 -c "
           import plistlib
           p_path = 'ios/Runner/Info.plist'

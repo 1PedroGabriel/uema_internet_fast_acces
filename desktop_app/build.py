@@ -10,7 +10,7 @@ def build():
     print("1. Verificando e instalando dependências...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
     
-    print("\n2. Executando PyInstaller com backends do Windows Vault...")
+    print("\n2. Executando PyInstaller com backends protegidos do Windows...")
     cmd = [
         "pyinstaller",
         "--noconsole",
@@ -18,6 +18,10 @@ def build():
         "--name=UEMA_Internet_FastAccess",
         "--hidden-import=keyring.backends.Windows",
         "--hidden-import=winreg",
+        "--hidden-import=ctypes",
+        "--hidden-import=logger",
+        "--hidden-import=single_instance",
+        "--hidden-import=autostart",
         "--collect-all=keyring",
         "--collect-all=plyer",
         "main.py"
@@ -27,7 +31,7 @@ def build():
     
     print("\n=======================================================")
     print("BUILD CONCLUÍDO COM SUCESSO!")
-    print("O executável final está em: desktop_app/dist/UEMA_Internet_FastAccess.exe")
+    print("Executável final: desktop_app/dist/UEMA_Internet_FastAccess.exe")
     print("=======================================================")
 
 if __name__ == "__main__":
