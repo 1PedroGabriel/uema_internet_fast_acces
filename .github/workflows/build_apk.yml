@@ -35,27 +35,82 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
           channel: 'stable'
 
       - name: Gerar Estrutura Nativa e Dependências
         run: |
           cd mobile_app
           flutter create --org br.uema.fastaccess --project-name uema_fast_access .
-          # Sincroniza a versão do update_checker com a tag do release
+          # Sincroniza versão do app e do update_checker com a tag do release
+          sed -i "s/^version: .*/version: ${{ steps.version.outputs.ver }}+${{ github.run_number }}/" pubspec.yaml
           sed -i "s/static const String currentVersion = '[^']*'/static const String currentVersion = '${{ steps.version.outputs.ver }}'/" lib/services/update_checker.dart
           flutter pub get
+
+      - name: Configurar Assinatura de Release (se secrets existirem)
+        env:
+          KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASS: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_PASS: ${{ secrets.KEY_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+        run: |
+          cd mobile_app
+          if [ -n "$KEYSTORE_B64" ]; then
+            echo "$KEYSTORE_B64" | base64 -d > android/upload-keystore.jks
+            cat > android/key.properties <<EOF
+          storePassword=$STORE_PASS
+          keyPassword=$KEY_PASS
+          keyAlias=$KEY_ALIAS
+          storeFile=upload-keystore.jks
+          EOF
+            python3 - <<'PY'
+          p = 'android/app/build.gradle.kts'
+          s = open(p, encoding='utf-8').read()
+          inject = '''
+          val keystoreProperties = java.util.Properties().apply {
+              val f = rootProject.file("key.properties")
+              if (f.exists()) load(f.inputStream())
+          }
+          '''
+          s = s.replace('android {', 'android {' + inject, 1)
+          s = s.replace('signingConfig = signingConfigs.getByName("debug")',
+              'signingConfig = if (keystoreProperties["keyAlias"] != null) signingConfigs.getByName("release") else signingConfigs.getByName("debug")')
+          s = s.replace('buildTypes {', '''signingConfigs {
+              create("release") {
+                  keyAlias = keystoreProperties["keyAlias"] as String?
+                  keyPassword = keystoreProperties["keyPassword"] as String?
+                  storeFile = keystoreProperties["storeFile"]?.let { file(it) }
+                  storePassword = keystoreProperties["storePassword"] as String?
+              }
+          }
+          buildTypes {''', 1)
+          open(p, 'w', encoding='utf-8').write(s)
+          PY
+            echo "Assinatura de release configurada."
+          else
+            echo "Secrets de assinatura ausentes: build usará chave debug (não publicável na Play Store)."
+          fi
 
       - name: Compilar APK Android (Release)
         run: |
           cd mobile_app
           flutter build apk --release
 
+      - name: Compilar AAB Android (Play Store)
+        run: |
+          cd mobile_app
+          flutter build appbundle --release
+
       - name: Publicar APK para Download
         uses: actions/upload-artifact@v4
         with:
           name: UEMA_FastAccess_Android_APK
           path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Publicar AAB (Play Store)
+        uses: actions/upload-artifact@v4
+        with:
+          name: UEMA_FastAccess_Android_AAB
+          path: mobile_app/build/app/outputs/bundle/release/app-release.aab
 
   # ==========================================
   # 2. GERAÇÃO AUTOMATIZADA DO APP iOS
@@ -70,7 +125,6 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.19.0'
           channel: 'stable'
 
       - name: Gerar Estrutura Nativa e Restringir HTTP ao Portal
@@ -178,15 +232,23 @@ jobs:
         # Navegadores retêm/bloqueiam .apk direto (Safe Browsing); dentro de
         # um .zip o download conclui normalmente.
         run: |
+          set -e
+          ls -la artifacts/android/
+          test -s artifacts/android/app-release.apk || { echo "ERRO: APK vazio ou ausente"; exit 1; }
           cd artifacts/android
           zip UEMA_FastAccess_Android.zip app-release.apk
+          test -s UEMA_FastAccess_Android.zip || { echo "ERRO: ZIP Android vazio"; exit 1; }
 
       - name: Compactar EXE em ZIP
         # O .exe também é retido por navegadores (SmartScreen/Safe Browsing);
         # o ZIP inclui o version_info.json necessário ao updater.
         run: |
+          set -e
+          ls -la artifacts/windows/
+          test -s artifacts/windows/UEMA_Internet_FastAccess.exe || { echo "ERRO: EXE vazio ou ausente"; exit 1; }
           cd artifacts/windows
           zip UEMA_FastAccess_Windows.zip UEMA_Internet_FastAccess.exe version_info.json
+          test -s UEMA_FastAccess_Windows.zip || { echo "ERRO: ZIP Windows vazio"; exit 1; }
 
       - name: Criar Release com Binários
         uses: softprops/action-gh-release@v2

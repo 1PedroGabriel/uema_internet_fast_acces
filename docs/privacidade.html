@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Política de Privacidade — UEMA FastAccess</title>
+  <style>
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: #f4f6f8;
+      color: #1c2b33;
+      line-height: 1.6;
+      margin: 0;
+    }
+    .topbar {
+      background: #1e526f;
+      color: #fff;
+      padding: 14px 24px;
+    }
+    .topbar a { color: #fff; text-decoration: none; font-size: 0.9rem; }
+    .container { max-width: 760px; margin: 0 auto; padding: 40px 24px 64px; }
+    h1 { font-size: 1.5rem; margin-bottom: 8px; }
+    h2 { font-size: 1.1rem; margin: 28px 0 8px; color: #163e54; }
+    p, li { color: #5c6b76; font-size: 0.95rem; }
+    ul { padding-left: 22px; }
+    .updated { font-size: 0.85rem; color: #8a959d; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="index.html">← UEMA FastAccess</a>
+  </div>
+  <main class="container">
+    <h1>Política de Privacidade</h1>
+    <p class="updated">Última atualização: setembro de 2026</p>
+
+    <h2>1. Quais dados o app usa</h2>
+    <p>O UEMA FastAccess solicita apenas o usuário e a senha do SIGUEMA, necessários para autenticar no portal de acesso Wi-Fi da universidade.</p>
+
+    <h2>2. Onde os dados ficam armazenados</h2>
+    <p>As credenciais nunca saem do seu aparelho em repouso. Elas são gravadas exclusivamente no cofre criptografado do sistema operacional:</p>
+    <ul>
+      <li><strong>Android:</strong> Android Keystore (criptografia gerenciada por hardware);</li>
+      <li><strong>iOS:</strong> Apple Keychain, acessível apenas pelo próprio app;</li>
+      <li><strong>Windows:</strong> Credential Manager (protegido por DPAPI, vinculado ao seu usuário).</li>
+    </ul>
+
+    <h2>3. Para onde os dados são enviados</h2>
+    <p>As credenciais são transmitidas <strong>apenas</strong> para o portal de autenticação da UEMA, e somente quando o app detecta que o aparelho está conectado à rede institucional. Atenção: o portal da universidade atualmente opera em HTTP sem criptografia — uma limitação da infraestrutura da UEMA, não do app. O aplicativo mitiga esse risco validando a rede e o destino antes de cada envio.</p>
+
+    <h2>4. Verificação de atualizações</h2>
+    <p>Para avisar sobre novas versões e correções de segurança, o app faz uma consulta anônima e somente-leitura à API pública do GitHub (releases do repositório). Nenhum dado pessoal ou credencial é enviado nessa consulta.</p>
+
+    <h2>5. O que o app NÃO faz</h2>
+    <ul>
+      <li>Não coleta, envia ou vende dados pessoais a terceiros;</li>
+      <li>Não possui anúncios, rastreadores ou ferramentas de analytics;</li>
+      <li>Não mantém servidores próprios — todo o tráfego ocorre entre seu aparelho e a rede da UEMA.</li>
+    </ul>
+
+    <h2>6. Como apagar seus dados</h2>
+    <p>Use a opção "Trocar usuário" / "Apagar credenciais" dentro do app, ou simplesmente desinstale o aplicativo — o cofre do sistema é esvaziado junto.</p>
+
+    <h2>7. Auditoria e contato</h2>
+    <p>O código-fonte é aberto e pode ser auditado em
+      <a href="https://github.com/1PedroGabriel/uema_internet_fast_acces">github.com/1PedroGabriel/uema_internet_fast_acces</a>.
+      Dúvidas e relatos podem ser registrados na aba "Issues" do repositório.</p>
+
+    <p class="updated">Projeto acadêmico independente, sem vínculo oficial com a UEMA.</p>
+  </main>
+</body>
+</html>

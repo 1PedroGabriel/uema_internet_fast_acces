@@ -17,6 +17,9 @@ build/
 .flutter-plugins-dependencies
 android/key.properties
 android/local.properties
+android/upload-keystore.jks
+*.jks
+*.keystore
 ios/Pods/
 ios/.symlinks/
 
