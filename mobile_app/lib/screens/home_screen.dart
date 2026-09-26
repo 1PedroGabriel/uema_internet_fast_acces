@@ -183,7 +183,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('UEMA Wi-Fi Fast', style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text('FastAccess', style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         actions: [
           if (_hasCredentials)

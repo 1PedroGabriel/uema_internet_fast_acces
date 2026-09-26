@@ -46,6 +46,11 @@ jobs:
           sed -i "s/static const String currentVersion = '[^']*'/static const String currentVersion = '${{ steps.version.outputs.ver }}'/" lib/services/update_checker.dart
           flutter pub get
 
+      - name: Gerar Ícones Personalizados
+        run: |
+          pip install pillow
+          python tools/generate_icons.py
+
       - name: Configurar Assinatura de Release (se secrets existirem)
         env:
           KEYSTORE_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
@@ -150,6 +155,11 @@ jobs:
               plistlib.dump(pl, fp)
           "
           flutter pub get
+
+      - name: Gerar Ícones Personalizados
+        run: |
+          pip3 install pillow
+          python3 tools/generate_icons.py
 
       - name: Compilar App iOS
         run: |

@@ -59,7 +59,7 @@ class UemaTaskHandler extends TaskHandler {
     if (status == PortalStatus.online) {
       _failureCount = 0;
       await FlutterForegroundTask.updateService(
-        notificationTitle: 'UEMA FastAccess',
+        notificationTitle: 'FastAccess',
         notificationText: 'Conectado à rede UEMA',
       );
       return;
@@ -67,7 +67,7 @@ class UemaTaskHandler extends TaskHandler {
 
     if (status == PortalStatus.offline) {
       await FlutterForegroundTask.updateService(
-        notificationTitle: 'UEMA FastAccess',
+        notificationTitle: 'FastAccess',
         notificationText: 'Aguardando a rede UEMA...',
       );
       return;
@@ -78,7 +78,7 @@ class UemaTaskHandler extends TaskHandler {
       final cooldown = DateTime.now().difference(_lastAttempt).inMinutes;
       if (cooldown < 10) {
         await FlutterForegroundTask.updateService(
-          notificationTitle: 'UEMA FastAccess',
+          notificationTitle: 'FastAccess',
           notificationText: 'Senha rejeitada? Abra o app para atualizar.',
         );
         return;
@@ -89,7 +89,7 @@ class UemaTaskHandler extends TaskHandler {
     final creds = await SecureStorage.getCredentials();
     if (creds['user'] == null || creds['pass'] == null) {
       await FlutterForegroundTask.updateService(
-        notificationTitle: 'UEMA FastAccess',
+        notificationTitle: 'FastAccess',
         notificationText: 'Toque para cadastrar suas credenciais',
       );
       return;
@@ -100,13 +100,13 @@ class UemaTaskHandler extends TaskHandler {
     if (success) {
       _failureCount = 0;
       await FlutterForegroundTask.updateService(
-        notificationTitle: 'UEMA FastAccess',
+        notificationTitle: 'FastAccess',
         notificationText: 'Autenticado automaticamente!',
       );
     } else {
       _failureCount++;
       await FlutterForegroundTask.updateService(
-        notificationTitle: 'UEMA FastAccess',
+        notificationTitle: 'FastAccess',
         notificationText: 'Tentando autenticar... ($_failureCount/5)',
       );
     }
@@ -148,7 +148,7 @@ class ForegroundServiceManager {
     if (await FlutterForegroundTask.isRunningService) return;
     await FlutterForegroundTask.startService(
       serviceId: 256,
-      notificationTitle: 'UEMA FastAccess',
+      notificationTitle: 'FastAccess',
       notificationText: 'Monitorando a rede UEMA...',
       callback: _startCallback,
     );

@@ -1,4 +1,6 @@
-# UEMA Internet Fast Access 🚀
+# FastAccess — Wi-Fi UEMA 🚀
+
+> Aplicativo **independente e sem vínculo oficial** com a UEMA. "UEMA" é citado apenas para identificar a rede compatível.
 
 Solução automatizada, segura e multiplataforma para autenticação em segundo plano na rede Wi-Fi da Universidade Estadual do Maranhão (UEMA).
 

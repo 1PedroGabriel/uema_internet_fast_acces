@@ -55,7 +55,7 @@ Baixe o artifact **UEMA_FastAccess_Android_AAB** na aba Actions. O `app-release.
 
 ## 5. Criar o app no Play Console
 
-1. **Criar app** → nome sugerido: `FastAccess UEMA (não oficial)` — evite passar a impressão de app oficial da universidade, pois o Google rejeita por *impersonação*.
+1. **Criar app** → nome: **FastAccess** (já aplicado no código). Não use "UEMA" como nome principal — a marca pertence à universidade e o Google rejeita por *impersonação*. Descreva na ficha como "compatível com a rede Wi-Fi da UEMA".
 2. **Play App Signing**: ative (recomendado) — o Google guarda a chave principal e sua chave local vira apenas a "chave de upload".
 3. **Ficha da loja**: descrição curta/longa, ícone 512×512, imagem de destaque 1024×500 e 2+ capturas de tela do app.
 4. **Política de privacidade**: aponte para `https://1pedrogabriel.github.io/uema_internet_fast_acces/privacidade.html`.

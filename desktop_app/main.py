@@ -45,7 +45,7 @@ def show_notification(title, message):
         notification.notify(
             title=title,
             message=message,
-            app_name="UEMA AutoLogin",
+            app_name="FastAccess",
             timeout=5
         )
     except Exception as e:

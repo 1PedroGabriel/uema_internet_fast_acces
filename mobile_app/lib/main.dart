@@ -14,7 +14,7 @@ class UemaFastAccessApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'UEMA Wi-Fi Fast',
+      title: 'FastAccess',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF276489)),
