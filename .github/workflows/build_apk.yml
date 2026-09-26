@@ -181,11 +181,17 @@ jobs:
           cd artifacts/android
           zip UEMA_FastAccess_Android.zip app-release.apk
 
+      - name: Compactar EXE em ZIP
+        # O .exe também é retido por navegadores (SmartScreen/Safe Browsing);
+        # o ZIP inclui o version_info.json necessário ao updater.
+        run: |
+          cd artifacts/windows
+          zip UEMA_FastAccess_Windows.zip UEMA_Internet_FastAccess.exe version_info.json
+
       - name: Criar Release com Binários
         uses: softprops/action-gh-release@v2
         with:
           files: |
             artifacts/android/UEMA_FastAccess_Android.zip
-            artifacts/windows/UEMA_Internet_FastAccess.exe
-            artifacts/windows/version_info.json
+            artifacts/windows/UEMA_FastAccess_Windows.zip
           generate_release_notes: true
