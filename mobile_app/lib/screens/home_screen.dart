@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_foreground_task/flutter_foreground_task.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../services/secure_storage.dart';
 import '../services/network_service.dart';
 import '../services/update_checker.dart';
+import '../services/foreground_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -28,6 +30,25 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _checkSavedCredentials();
     _checkForUpdate();
+    _requestPermissionsAndStartService();
+  }
+
+  /// Pede a permissão de notificação (Android 13+) e inicia o serviço de
+  /// auto-login em primeiro plano se já houver credenciais salvas.
+  Future<void> _requestPermissionsAndStartService() async {
+    try {
+      if (await FlutterForegroundTask.isIgnoringBatteryOptimizations == false) {
+        // Não força: apenas se o usuário já tiver credenciais, o serviço inicia
+      }
+      final notif = await FlutterForegroundTask.checkNotificationPermission();
+      if (notif != NotificationPermission.granted) {
+        await FlutterForegroundTask.requestNotificationPermission();
+      }
+      final creds = await SecureStorage.getCredentials();
+      if (creds['user'] != null && creds['pass'] != null) {
+        await ForegroundServiceManager.start();
+      }
+    } catch (_) {}
   }
 
   Future<void> _checkForUpdate() async {
@@ -66,6 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     await SecureStorage.saveCredentials(user, pass);
+    await ForegroundServiceManager.start();
     setState(() => _hasCredentials = true);
     await _performLogin();
   }
@@ -140,6 +162,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
     if (confirm == true) {
       await SecureStorage.clear();
+      await ForegroundServiceManager.stop();
       setState(() {
         _hasCredentials = false;
         _userController.clear();

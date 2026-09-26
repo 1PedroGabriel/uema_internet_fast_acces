@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'screens/home_screen.dart';
+import 'services/foreground_service.dart';
 
 void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  ForegroundServiceManager.init();
   runApp(const UemaFastAccessApp());
 }
 
