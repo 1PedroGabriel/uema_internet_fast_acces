@@ -11,11 +11,13 @@ Resolve de vez a desconexão repetitiva que ocorre ao circular entre blocos e pr
 A versão Desktop roda de forma invisível em segundo plano e inclui persistência automática no sistema operacional.
 
 ### Como Funciona:
-1. **Identificação de Rede**: Monitora ativamente o SSID da rede `UEMA`.
+1. **Identificação de Rede**: Monitora ativamente o SSID da rede `UEMA` (correspondência exata, case-insensitive).
 2. **Teste de Conectividade**: Valida o acesso através do endpoint oficial de probe (`msftconnecttest.com`).
-3. **Autenticação Automática**: Se o captive portal interceptar o tráfego, o app faz o handshake, envia os cabeçalhos (`Referer`) e submete as credenciais do SIGUEMA diretamente ao gateway `http://172.25.50.10/auth/index.html/u`.
-4. **Primeiro Uso**: Se as credenciais não estiverem cadastradas, exibe uma interface gráfica simples solicitando Matrícula e Senha.
-5. **Persistência**: Opção de iniciar automaticamente junto com o Windows (sem precisar abrir o app manualmente).
+3. **Descoberta Dinâmica do Portal**: Ao detectar o captive portal, o app segue o redirecionamento e extrai a URL real de autenticação do formulário — funciona mesmo se o endereço do controlador mudar entre campi. Só aceita destino HTTP em IP privado (anti-phishing).
+4. **Autenticação Automática**: Envia os cabeçalhos (`Referer`) e submete as credenciais do SIGUEMA ao gateway descoberto (fallback: `http://172.25.50.10/auth/index.html/u`).
+5. **Primeiro Uso**: Se as credenciais não estiverem cadastradas, abre uma janela de configuração em processo separado (sem travar o daemon).
+6. **Auto-recuperação de Senha**: Se o portal rejeitar as credenciais em dois ciclos consecutivos (senha trocada no SIGUEMA), a senha é removida do cofre e a janela de recadastro abre automaticamente.
+7. **Persistência**: Opção de iniciar automaticamente junto com o Windows (sem precisar abrir o app manualmente).
 
 ### Como Gerar o Executável:
 Na pasta `desktop_app`:
@@ -51,4 +53,6 @@ Você **não** precisa de Android Studio ou Xcode instalados localmente.
   * **No Windows**: Utiliza o **Windows Credential Locker (Vault)** via DPAPI.
   * **No Android**: Criptografia por hardware via **Android Keystore** (`EncryptedSharedPreferences`).
   * **No iOS**: Criptografia segura via **Apple Keychain**.
-* **Tráfego Local**: Comunicação direcionada unicamente para o IP interno do gateway da universidade (`172.25.50.10`).
+* **Tráfego Local Restrito**: Comunicação direcionada apenas para IPs privados da rede da universidade; cleartext HTTP permitido somente ao portal e ao probe (via `networkSecurityConfig` no Android e `NSExceptionDomains` no iOS).
+* **Descoberta Dinâmica com Validação**: O endereço do portal é descoberto a cada conexão e rejeitado se não for HTTP em IP privado.
+* **⚠ Limitação Inerente ao Portal**: O gateway da UEMA aceita credenciais por HTTP sem TLS. O app mitiga com validação de rede e anti-phishing, mas **não pode proteger a senha em trânsito** — isso depende da CTIC/PROINFRA habilitar HTTPS ou 802.1X.

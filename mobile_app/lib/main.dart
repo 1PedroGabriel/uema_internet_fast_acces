@@ -14,7 +14,7 @@ class UemaFastAccessApp extends StatelessWidget {
       title: 'UEMA Wi-Fi Fast',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.green),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF276489)),
         useMaterial3: true,
       ),
       home: const HomeScreen(),

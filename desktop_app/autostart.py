@@ -21,8 +21,10 @@ def set_autostart(enable=True):
                 # Obtém o caminho do executável (.exe) ou do script atual
                 exe_path = os.path.abspath(sys.argv[0])
                 if not exe_path.endswith(".exe"):
-                    # Se rodando em desenvolvimento com python
-                    exe_path = f'"{sys.executable}" "{os.path.abspath("main.py")}"'
+                    # Em desenvolvimento: caminho absoluto relativo a este módulo,
+                    # independente do diretório de trabalho no momento da execução
+                    main_script = os.path.join(os.path.dirname(os.path.abspath(__file__)), "main.py")
+                    exe_path = f'"{sys.executable}" "{main_script}"'
                 else:
                     exe_path = f'"{exe_path}"'
                 winreg.SetValueEx(reg_key, APP_NAME, 0, winreg.REG_SZ, exe_path)

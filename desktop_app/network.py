@@ -4,43 +4,91 @@ import socket
 import re
 import sys
 import time
+import ipaddress
+from urllib.parse import urljoin, urlparse
 from logger import setup_logger
 
 logger = setup_logger()
 
-# Parâmetros oficiais do Captive Portal da UEMA
+# Fallback: endereço do Captive Portal da UEMA observado no campus.
+# O endereço real é descoberto dinamicamente a cada conexão (ver do_login),
+# pois pode variar entre campi/controladores.
 LOGIN_URL = "http://172.25.50.10/auth/index.html/u"
+PORTAL_FALLBACK_HOST = "172.25.50.10"
 PRIMARY_PROBE = "http://www.msftconnecttest.com/connecttest.txt"
 SECONDARY_PROBE = "http://clients3.google.com/generate_204"
 USER_FIELD = "user"
 PASS_FIELD = "password"
 
+def is_private_network_ip(ip_str):
+    """True se o IP pertence a faixas privadas/locais (RFC1918, loopback, link-local)."""
+    try:
+        ip = ipaddress.ip_address(ip_str)
+        return ip.is_private or ip.is_loopback or ip.is_link_local
+    except ValueError:
+        return False
+
 def is_in_uema_subnet():
     """
-    SEGURANÇA (Anti-Evil Twin / Rogue AP):
-    Como o portal da UEMA recebe a senha por HTTP puro no IP 172.25.50.10,
-    precisamos garantir que a máquina está fisicamente na sub-rede legítima
-    da universidade (172.25.x.x) antes de disparar qualquer credencial.
+    SEGURANÇA (Anti-Evil Twin):
+    Garante que a máquina está em uma rede privada antes de enviar credenciais.
+    IMPORTANTE: o IP do cliente na rede UEMA pode ser 10.x.x.x (observado
+    10.101.x.x) enquanto o controlador do portal usa 172.25.x.x. Por isso a
+    validação aceita qualquer faixa privada; a URL final do portal é
+    descoberta dinamicamente e validada separadamente em do_login().
     """
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        # Identifica a interface de rede que tem rota para o gateway da UEMA
-        s.connect(("172.25.50.10", 80))
+        try:
+            # Identifica a interface que tem rota para o controlador da UEMA
+            s.connect((PORTAL_FALLBACK_HOST, 80))
+        except OSError:
+            # Fallback: qualquer rota externa serve para identificar a interface ativa
+            s.connect(("8.8.8.8", 80))
         local_ip = s.getsockname()[0]
         s.close()
-        
-        # Verifica se o IP local obtido via DHCP pertence à rede institucional
-        if local_ip.startswith("172.25."):
+
+        if is_private_network_ip(local_ip):
             return True
-        else:
-            logger.warning(
-                f"[SEGURANÇA] IP local ({local_ip}) não pertence à faixa UEMA (172.25.x.x). "
-                "Possível rede falsa ou Evil Twin. Autenticação cancelada."
-            )
-            return False
+        logger.warning(
+            f"[SEGURANÇA] IP local ({local_ip}) não é privado. "
+            "Possível rede falsa ou Evil Twin. Autenticação cancelada."
+        )
+        return False
     except Exception as e:
         logger.debug(f"Falha ao validar sub-rede local: {e}")
         return False
+
+def discover_portal_url(session):
+    """
+    Descobre dinamicamente a URL de autenticação do portal cativo:
+    segue o redirecionamento do probe e extrai o 'action' do formulário.
+    Só aceita destino HTTP em IP privado (anti-phishing). Retorna None se
+    não conseguir descobrir com segurança.
+    """
+    try:
+        probe_resp = session.get(PRIMARY_PROBE, timeout=5, allow_redirects=True)
+    except requests.exceptions.RequestException:
+        return None
+
+    if probe_resp.status_code == 200 and "Microsoft Connect Test" in probe_resp.text:
+        return None  # Internet já livre, não há portal
+
+    form_match = re.search(
+        r'<form[^>]*action=["\']([^"\']+)["\']', probe_resp.text, re.IGNORECASE
+    )
+    if not form_match:
+        return None
+
+    discovered = urljoin(probe_resp.url, form_match.group(1))
+    parsed = urlparse(discovered)
+    if parsed.scheme == 'http' and is_private_network_ip(parsed.hostname or ''):
+        return discovered
+
+    logger.warning(
+        f"[SEGURANÇA] URL de portal descoberta rejeitada (não é IP privado HTTP): {discovered}"
+    )
+    return None
 
 def get_current_ssid():
     """
@@ -55,7 +103,7 @@ def get_current_ssid():
                 ['netsh', 'wlan', 'show', 'interfaces'],
                 startupinfo=startupinfo,
                 stderr=subprocess.DEVNULL
-            ).decode('utf-8', errors='ignore')
+            ).decode('mbcs', errors='ignore')
             
             match = re.search(r'^\s*SSID\s*:\s*(.+)$', output, re.MULTILINE)
             if match:
@@ -115,36 +163,37 @@ def do_login(username, password):
     if not is_in_uema_subnet():
         return False
 
-    session = requests.Session()
-    session.headers.update({
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer': LOGIN_URL
-    })
+    with requests.Session() as session:
+        session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Referer': LOGIN_URL
+        })
 
-    try:
-        logger.info(f"Iniciando handshake com o gateway da UEMA ({LOGIN_URL})...")
         try:
-            session.get(PRIMARY_PROBE, timeout=5, allow_redirects=True)
-        except requests.exceptions.RequestException:
-            pass
+            # Descobre a URL real do portal (muda conforme campus/controlador);
+            # usa o fallback fixo se a descoberta falhar
+            target_url = discover_portal_url(session) or LOGIN_URL
+            if target_url != LOGIN_URL:
+                logger.info(f"Portal descoberto dinamicamente: {target_url}")
+            logger.info(f"Iniciando handshake com o gateway da UEMA ({target_url})...")
 
-        payload = {
-            USER_FIELD: username,
-            PASS_FIELD: password,
-        }
+            payload = {
+                USER_FIELD: username,
+                PASS_FIELD: password,
+            }
 
-        response = session.post(LOGIN_URL, data=payload, timeout=8)
-        logger.info(f"POST enviado. Código de resposta HTTP: {response.status_code}")
-        
-        # Pausa para aplicação das regras no firewall
-        time.sleep(2)
+            response = session.post(target_url, data=payload, timeout=8)
+            logger.info(f"POST enviado. Código de resposta HTTP: {response.status_code}")
 
-        success = check_internet()
-        if success:
-            logger.info("Internet confirmada liberada após autenticação.")
-        else:
-            logger.warning("POST enviado, mas a internet não respondeu ao teste de conectividade.")
-        return success
-    except Exception as e:
-        logger.error(f"Erro na requisição de autenticação: {e}")
-        return False
+            # Pausa para aplicação das regras no firewall
+            time.sleep(2)
+
+            success = check_internet()
+            if success:
+                logger.info("Internet confirmada liberada após autenticação.")
+            else:
+                logger.warning("POST enviado, mas a internet não respondeu ao teste de conectividade.")
+            return success
+        except Exception as e:
+            logger.error(f"Erro na requisição de autenticação: {e}")
+            return False

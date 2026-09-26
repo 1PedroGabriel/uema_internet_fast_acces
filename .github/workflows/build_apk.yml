@@ -35,7 +35,6 @@ jobs:
         run: |
           cd mobile_app
           flutter create --org br.uema.fastaccess --project-name uema_fast_access .
-          sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
           flutter pub get
 
       - name: Compilar APK Android (Release)
@@ -65,7 +64,7 @@ jobs:
           flutter-version: '3.19.0'
           channel: 'stable'
 
-      - name: Gerar Estrutura Nativa e Permitir HTTP
+      - name: Gerar Estrutura Nativa e Restringir HTTP ao Portal
         run: |
           cd mobile_app
           flutter create --org br.uema.fastaccess --project-name uema_fast_access .
@@ -74,7 +73,16 @@ jobs:
           p_path = 'ios/Runner/Info.plist'
           with open(p_path, 'rb') as fp:
               pl = plistlib.load(fp)
-          pl['NSAppTransportSecurity'] = {'NSAllowsArbitraryLoads': True}
+          # Cleartext SOMENTE para o portal UEMA e o probe (anti-vazamento)
+          pl['NSAppTransportSecurity'] = {
+              'NSExceptionDomains': {
+                  '172.25.50.10': {'NSExceptionAllowsInsecureHTTPLoads': True},
+                  'msftconnecttest.com': {
+                      'NSExceptionAllowsInsecureHTTPLoads': True,
+                      'NSIncludesSubdomains': True
+                  }
+              }
+          }
           with open(p_path, 'wb') as fp:
               plistlib.dump(pl, fp)
           "

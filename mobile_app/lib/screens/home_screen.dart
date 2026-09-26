@@ -12,9 +12,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final _userController = TextEditingController();
   final _passController = TextEditingController();
-  
+
+  static const Color _uemaBlue = Color(0xFF276489);
+
   bool _hasCredentials = false;
   bool _isLoading = false;
+  bool _obscurePassword = true;
   String _statusMessage = '';
 
   @override
@@ -25,12 +28,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _checkSavedCredentials() async {
     final creds = await SecureStorage.getCredentials();
+    if (!mounted) return;
     setState(() {
       _hasCredentials = creds['user'] != null && creds['pass'] != null;
       if (_hasCredentials) {
         _userController.text = creds['user']!;
       }
     });
+    // Login automático ao abrir o app quando já há credenciais salvas
+    if (_hasCredentials) {
+      await _performLogin();
+    }
   }
 
   Future<void> _saveAndLogin() async {
@@ -59,9 +67,10 @@ class _HomeScreenState extends State<HomeScreen> {
     });
 
     // 1. Testa conectividade real
-    bool isPortal = await NetworkService.isCaptivePortal();
-    
-    if (!isPortal) {
+    final status = await NetworkService.checkStatus();
+    if (!mounted) return;
+
+    if (status == PortalStatus.online) {
       setState(() {
         _statusMessage = 'A internet já está liberada e funcionando!';
         _isLoading = false;
@@ -69,9 +78,19 @@ class _HomeScreenState extends State<HomeScreen> {
       return;
     }
 
+    if (status == PortalStatus.offline) {
+      setState(() {
+        _statusMessage =
+            'Sem conexão. Verifique se o Wi-Fi UEMA está conectado.';
+        _isLoading = false;
+      });
+      return;
+    }
+
     setState(() => _statusMessage = 'Portal cativo detectado. Autenticando...');
-    
+
     final creds = await SecureStorage.getCredentials();
+    if (!mounted) return;
     if (creds['user'] == null || creds['pass'] == null) {
       setState(() {
         _hasCredentials = false;
@@ -82,12 +101,13 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     bool success = await NetworkService.doLogin(creds['user']!, creds['pass']!);
+    if (!mounted) return;
 
     setState(() {
       _isLoading = false;
-      _statusMessage = success 
-          ? 'Conectado com sucesso à rede UEMA!' 
-          : 'Falha no login. Verifique sua senha do SIGUEMA ou tente novamente.';
+      _statusMessage = success
+          ? 'Conectado com sucesso à rede UEMA!'
+          : 'Falha no login. Verifique sua senha do SIGUEMA ou se está na rede UEMA.';
     });
   }
 
@@ -120,6 +140,13 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   @override
+  void dispose() {
+    _userController.dispose();
+    _passController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -141,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               const SizedBox(height: 20),
-              const Icon(Icons.wifi_lock, size: 75, color: Colors.green),
+              const Icon(Icons.wifi_lock, size: 75, color: _uemaBlue),
               const SizedBox(height: 20),
               
               if (!_hasCredentials) ...[
@@ -168,11 +195,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 const SizedBox(height: 15),
                 TextField(
                   controller: _passController,
-                  obscureText: true,
-                  decoration: const InputDecoration(
+                  obscureText: _obscurePassword,
+                  decoration: InputDecoration(
                     labelText: 'Senha SIGUEMA',
-                    border: OutlineInputBorder(),
-                    prefixIcon: Icon(Icons.lock),
+                    border: const OutlineInputBorder(),
+                    prefixIcon: const Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(_obscurePassword
+                          ? Icons.visibility
+                          : Icons.visibility_off),
+                      tooltip: _obscurePassword ? 'Mostrar senha' : 'Ocultar senha',
+                      onPressed: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                    ),
                   ),
                 ),
                 const SizedBox(height: 25),
@@ -180,7 +215,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   onPressed: _saveAndLogin,
                   style: ElevatedButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    backgroundColor: Colors.green,
+                    backgroundColor: _uemaBlue,
                     foregroundColor: Colors.white,
                   ),
                   child: const Text('Salvar e Conectar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
@@ -196,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                            const Icon(Icons.check_circle, color: _uemaBlue, size: 20),
                             const SizedBox(width: 8),
                             Text(
                               'Matrícula: ${_userController.text}',
@@ -212,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               : const Icon(Icons.bolt, color: Colors.white, size: 28),
                           label: const Text('1-Tap Connect', style: TextStyle(fontSize: 20, color: Colors.white, fontWeight: FontWeight.bold)),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: _uemaBlue,
                             padding: const EdgeInsets.symmetric(vertical: 18),
                             minimumSize: const Size(double.infinity, 64),
                             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
