@@ -214,7 +214,8 @@
         <span class="platform">Celular</span>
         <h3>Android</h3>
         <p>Abra o app ao chegar ao campus: a conexão é liberada automaticamente com as credenciais salvas.</p>
-        <a class="btn btn-main" href="https://github.com/1PedroGabriel/uema_internet_fast_acces/releases/latest/download/app-release.apk">Baixar para Android (.apk)</a>
+        <a class="btn btn-main" href="https://github.com/1PedroGabriel/uema_internet_fast_acces/releases/latest/download/UEMA_FastAccess_Android.zip">Baixar para Android (.zip)</a>
+        <p style="font-size: 0.82rem;">Extraia o .zip e instale o <code>app-release.apk</code>. O ZIP evita o travamento do download no navegador.</p>
       </div>
 
       <div class="card">
@@ -229,7 +230,9 @@
       <strong>Windows:</strong> ao executar pela primeira vez, o SmartScreen pode exibir
       "O Windows protegeu o computador" (o app não possui certificado pago de assinatura).
       Clique em <em>Mais informações → Executar mesmo assim</em>.<br>
-      <strong>Android:</strong> autorize a instalação de apps de fontes externas quando solicitado.
+      <strong>Android:</strong> o download é um arquivo .zip — extraia e abra o APK.
+      Autorize a instalação de apps de fontes externas quando solicitado e, se o Play
+      Protect exibir um aviso, toque em <em>Instalar mesmo assim</em>.
     </div>
 
     <h2 class="section">Como usar</h2>
@@ -262,12 +265,24 @@
       </tr>
     </table>
 
+    <h2 class="section">Auditoria e atualizações</h2>
+
+    <div class="card" style="margin-bottom: 16px;">
+      <p>
+        O código é aberto e auditável. Quando uma melhoria de segurança ou correção é publicada,
+        o app avisa automaticamente que há uma nova versão disponível.
+      </p>
+      <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+        <a class="btn btn-outline" href="https://github.com/1PedroGabriel/uema_internet_fast_acces/releases">Histórico de versões e correções</a>
+        <a class="btn btn-outline" href="https://github.com/1PedroGabriel/uema_internet_fast_acces">Auditar código-fonte</a>
+      </div>
+    </div>
+
     <div class="note">
       <strong>Transparência:</strong> o portal de autenticação da UEMA recebe as credenciais
       por HTTP sem criptografia — uma limitação da infraestrutura da universidade, não do app.
       O aplicativo reduz os riscos enviando os dados apenas em rede privada e validando o
       destino, mas a correção definitiva (HTTPS ou 802.1X) depende da CTIC/PROINFRA.
-      Todo o código é aberto e auditável no repositório.
     </div>
 
   </main>

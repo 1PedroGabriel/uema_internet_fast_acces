@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/secure_storage.dart';
 import '../services/network_service.dart';
+import '../services/update_checker.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -19,11 +21,19 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   bool _obscurePassword = true;
   String _statusMessage = '';
+  UpdateInfo? _update;
 
   @override
   void initState() {
     super.initState();
     _checkSavedCredentials();
+    _checkForUpdate();
+  }
+
+  Future<void> _checkForUpdate() async {
+    final info = await UpdateChecker.check();
+    if (!mounted || info == null) return;
+    setState(() => _update = info);
   }
 
   Future<void> _checkSavedCredentials() async {
@@ -167,6 +177,32 @@ class _HomeScreenState extends State<HomeScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
+              if (_update != null && _update!.available)
+                Container(
+                  margin: const EdgeInsets.only(bottom: 20),
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFe8f4fd),
+                    border: Border.all(color: _uemaBlue),
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.system_update, color: _uemaBlue),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Versão ${_update!.tag} disponível. Toque para baixar e ver as melhorias de segurança.',
+                          style: const TextStyle(fontSize: 13, color: _uemaBlue, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () => launchUrl(Uri.parse(_update!.url)),
+                        child: const Text('Abrir'),
+                      ),
+                    ],
+                  ),
+                ),
               const SizedBox(height: 20),
               const Icon(Icons.wifi_lock, size: 75, color: _uemaBlue),
               const SizedBox(height: 20),

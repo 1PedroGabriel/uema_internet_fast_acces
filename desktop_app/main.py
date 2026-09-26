@@ -3,9 +3,11 @@ import sys
 import os
 import subprocess
 import argparse
+import threading
 import network
 import security
 import ui
+import updater
 from logger import setup_logger
 from single_instance import SingleInstance
 
@@ -71,9 +73,24 @@ def open_config_ui():
         logger.error(f"Falha ao abrir janela de configuração: {e}")
         return None
 
+def check_updates_background():
+    """Checa atualizações em thread separada para não atrasar o daemon."""
+    try:
+        result = updater.check_for_update()
+        if result and result['available']:
+            msg = (
+                f"Nova versão {result['tag']} disponível (você está na {result['current']}). "
+                f"Baixe em: {result['url']}"
+            )
+            logger.info(f"[ATUALIZAÇÃO] {msg}")
+            show_notification("UEMA FastAccess", f"Atualização disponível: {result['tag']}. Veja o log para o link.")
+    except Exception as e:
+        logger.debug(f"Erro na checagem de atualização: {e}")
+
 def run_daemon():
     logger.info("=== UEMA FastAccess Daemon iniciado ===")
-    
+    threading.Thread(target=check_updates_background, daemon=True).start()
+
     last_state = "init"
     consecutive_failures = 0
     circuit_open_time = load_circuit_open_time()

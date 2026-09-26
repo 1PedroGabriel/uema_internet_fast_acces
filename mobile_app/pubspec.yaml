@@ -13,6 +13,8 @@ dependencies:
   http: ^1.1.0
   # Para salvar senhas de forma criptografada no Android/iOS
   flutter_secure_storage: ^9.0.0
+  # Para abrir links de atualização no navegador
+  url_launcher: ^6.2.0
 
 dev_dependencies:
   flutter_test:

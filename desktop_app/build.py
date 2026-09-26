@@ -22,6 +22,7 @@ def build():
         "--hidden-import=logger",
         "--hidden-import=single_instance",
         "--hidden-import=autostart",
+        "--hidden-import=updater",
         "--collect-all=keyring",
         "--collect-all=plyer",
         "main.py"
