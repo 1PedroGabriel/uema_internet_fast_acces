@@ -1,27 +1,43 @@
 import keyring
+import keyring.backends.Windows
+import sys
 
-# Nome do "Cofre" no gerenciador de credenciais do Sistema Operacional
 SERVICE_NAME = "UEMA_Wifi_AutoLogin"
 USER_KEY = "saved_username"
 
+def _ensure_backend():
+    """Garante que o backend do Windows Vault está ativo no executável compilado."""
+    try:
+        if sys.platform == "win32":
+            keyring.set_keyring(keyring.backends.Windows.WinVaultKeyring())
+    except Exception:
+        pass
+
 def save_credentials(username, password):
     """
-    Salva as credenciais de forma segura usando o gerenciador de senhas do SO
-    (ex: Windows Credential Manager, macOS Keychain).
-    NUNCA salva em texto plano.
+    Salva as credenciais no cofre do sistema operacional.
+    Retorna True se salvou com sucesso.
     """
-    # Salvamos o nome de usuário usando uma chave fixa
-    keyring.set_password(SERVICE_NAME, USER_KEY, username)
-    # Salvamos a senha associada ao nome de usuário
-    keyring.set_password(SERVICE_NAME, username, password)
+    _ensure_backend()
+    try:
+        keyring.set_password(SERVICE_NAME, USER_KEY, username)
+        keyring.set_password(SERVICE_NAME, username, password)
+        return True
+    except Exception as e:
+        print(f"Erro ao salvar credenciais no keyring: {e}")
+        return False
 
 def get_credentials():
     """
-    Recupera as credenciais de forma segura do cofre do SO.
-    Retorna (username, password) ou (None, None) se não existir.
+    Recupera as credenciais de forma segura.
+    Retorna (username, password) ou (None, None).
     """
-    username = keyring.get_password(SERVICE_NAME, USER_KEY)
-    if username:
-        password = keyring.get_password(SERVICE_NAME, username)
-        return username, password
+    _ensure_backend()
+    try:
+        username = keyring.get_password(SERVICE_NAME, USER_KEY)
+        if username:
+            password = keyring.get_password(SERVICE_NAME, username)
+            return username, password
+    except Exception as e:
+        print(f"Erro ao obter credenciais do keyring: {e}")
     return None, None

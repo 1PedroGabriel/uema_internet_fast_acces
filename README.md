@@ -1,62 +1,54 @@
-# UEMA Internet Fast Access
+# UEMA Internet Fast Access 🚀
 
-Este projeto visa resolver um problema comum em ambientes universitários: a necessidade de fazer login repetidas vezes no portal Wi-Fi (Captive Portal) sempre que você troca de prédio ou a sessão expira.
+Solução automatizada, segura e multiplataforma para autenticação em segundo plano na rede Wi-Fi da Universidade Estadual do Maranhão (UEMA).
 
-O aplicativo funciona em *background* (segundo plano). O fluxo principal é:
-1. **Estou na internet da UEMA?** (Verifica o SSID do Wi-Fi).
-2. **Estou logado?** (Faz um ping seguro para checar se a internet está liberada ou retida no portal).
-3. **Use credenciais registradas**: Recupera as credenciais criptografadas de forma automática.
-4. **Primeiro uso**: Se as credenciais não existirem, abre uma janela pedindo para o usuário se registrar.
-
-## Foco em Segurança 🔒
-
-Este aplicativo **NÃO** salva senhas em arquivos de texto (txt/json/sqlite). Ele utiliza a biblioteca `keyring` do Python, que armazena os dados de forma criptografada nos cofres nativos do Sistema Operacional:
-* **Windows**: Gerenciador de Credenciais do Windows (Credential Locker).
-* **macOS**: Keychain.
-* **Linux**: Secret Service (KWallet / GNOME Keyring).
-
-Além disso, a requisição de login utiliza `verify=True` para garantir validação do Certificado SSL, protegendo contra redes Wi-Fi falsas (*Evil Twin attacks*).
+Resolve de vez a desconexão repetitiva que ocorre ao circular entre blocos e prédios do campus.
 
 ---
 
-## 🛠️ Como configurar (Para o Desenvolvedor)
+## 💻 1. Versão Computador (Windows .exe)
 
-Como os portais de internet de cada universidade têm links diferentes, você precisará configurar a URL exata do portal da UEMA antes de gerar o `.exe`.
+A versão Desktop roda de forma invisível em segundo plano e inclui persistência automática no sistema operacional.
 
-1. Conecte-se na Wi-Fi da UEMA.
-2. Quando a tela de login abrir no navegador, aperte **F12** e vá na aba **Network (Rede)**.
-3. Preencha seu usuário e senha e clique em Entrar.
-4. Na aba Network, procure a primeira requisição do tipo **POST**.
-5. Clique nela e veja os parâmetros:
-   * **URL**: Qual é o link que recebeu o POST?
-   * **Payload/Form Data**: Quais são os nomes dos campos (ex: `username`, `password`, `user`, `pass`)?
-6. Abra o arquivo `desktop_app/network.py` e altere as constantes `LOGIN_URL`, `USER_FIELD` e `PASS_FIELD` com os dados que você encontrou.
+### Como Funciona:
+1. **Identificação de Rede**: Monitora ativamente o SSID da rede `UEMA`.
+2. **Teste de Conectividade**: Valida o acesso através do endpoint oficial de probe (`msftconnecttest.com`).
+3. **Autenticação Automática**: Se o captive portal interceptar o tráfego, o app faz o handshake, envia os cabeçalhos (`Referer`) e submete as credenciais do SIGUEMA diretamente ao gateway `http://172.25.50.10/auth/index.html/u`.
+4. **Primeiro Uso**: Se as credenciais não estiverem cadastradas, exibe uma interface gráfica simples solicitando Matrícula e Senha.
+5. **Persistência**: Opção de iniciar automaticamente junto com o Windows (sem precisar abrir o app manualmente).
 
----
-
-## 🚀 Como gerar o Executável (.exe) para as pessoas baixarem
-
-Basta ter o Python instalado em seu computador. Na pasta do projeto (`desktop_app`), execute:
-
-```bash
+### Como Gerar o Executável:
+Na pasta `desktop_app`:
+```powershell
 python build.py
 ```
-
-Isso irá baixar as dependências automaticamente e criar uma pasta chamada `dist`. Lá dentro, estará o arquivo **UEMA_Internet_FastAccess.exe**.
-
-A pessoa (usuário final) só precisa baixar esse arquivo e colocá-lo para rodar junto com a inicialização do Windows.
+O executável final pronto para uso e distribuição será gerado em: `desktop_app/dist/UEMA_Internet_FastAccess.exe`.
 
 ---
 
-## 📱 E o aplicativo para Celular (Mobile)?
+## 📱 2. Versão Celular (Android & iOS)
 
-Dispositivos móveis (Android/iOS) possuem sistemas operacionais extremamente restritos quanto à execução de tarefas de rede em background para economizar bateria. Além disso, o próprio celular intercepta captive portals antes que os apps comuns o façam.
+Desenvolvida em Flutter para entregar binários nativos para smartphones.
 
-Para criar a versão mobile deste app e publicar no GitHub, a arquitetura recomendada é usar **Flutter** ou **React Native** com os seguintes recursos nativos:
+### Estratégia de Uso:
+Devido às políticas rígidas de economia de bateria do Android e iOS contra requisições em segundo plano, o aplicativo adota o fluxo **"1-Tap Connect"**:
+* O aluno cadastra o acesso uma única vez.
+* Ao chegar na UEMA ou trocar de bloco, basta tocar no botão **"1-Tap Connect"** para que a internet seja liberada instantaneamente em 1 segundo.
 
-### Arquitetura Android (Kotlin/Flutter):
-1. **Armazenamento Seguro**: Use `EncryptedSharedPreferences` (Android) ou `flutter_secure_storage`.
-2. **Foreground Service / WorkManager**: Para o Android permitir que seu app monitore a rede no fundo, você precisará de um *Foreground Service* (que deixa uma notificação permanente) ou registrar um `ConnectivityManager.NetworkCallback` que é acionado quando a rede Wi-Fi muda.
-3. **Captive Portal Bypass**: O app envia um HTTP POST silencioso para a mesma `LOGIN_URL` usando a biblioteca de HTTP do celular no momento em que detecta o SSID "UEMA-WIFI".
+### Como Baixar os Executáveis Mobile (CI/CD Automático):
+Você **não** precisa de Android Studio ou Xcode instalados localmente.
+1. Ao enviar o código para o GitHub, a esteira do **GitHub Actions** compila os aplicativos na nuvem.
+2. Acesse a aba **Actions** no seu repositório do GitHub.
+3. Clique na última execução da esteira e baixe:
+   * 🟢 **UEMA_FastAccess_Android_APK** (Arquivo `.apk` para instalar diretamente no Android).
+   * 🍎 **UEMA_FastAccess_iOS_APP** (Pacote `.zip` para instalação no iOS via AltStore / Sideloadly).
 
-Você pode hospedar ambas as versões no GitHub: a versão Desktop (em Python) e o código fonte da versão Mobile (Flutter), disponibilizando o `.exe` e o `.apk` na aba **Releases** do seu repositório.
+---
+
+## 🔒 Segurança e Armazenamento
+
+* **Zero Plain-Text**: Senhas **nunca** são salvas em arquivos de texto ou banco local desprotegido.
+  * **No Windows**: Utiliza o **Windows Credential Locker (Vault)** via DPAPI.
+  * **No Android**: Criptografia por hardware via **Android Keystore** (`EncryptedSharedPreferences`).
+  * **No iOS**: Criptografia segura via **Apple Keychain**.
+* **Tráfego Local**: Comunicação direcionada unicamente para o IP interno do gateway da universidade (`172.25.50.10`).

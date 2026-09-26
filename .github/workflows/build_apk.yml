@@ -1,66 +1,101 @@
 name: Build Executables (Android & iOS)
 
-# O robô será ativado automaticamente ao enviar o código, ou clicando no botão "Run workflow"
 on:
   push:
     branches:
       - main
-  workflow_dispatch: 
+  workflow_dispatch:
 
 jobs:
   # ==========================================
-  # 1. GERA O EXECUTÁVEL DO ANDROID (.APK)
+  # 1. GERAÇÃO AUTOMATIZADA DO APK ANDROID
   # ==========================================
   build-android:
     name: Build Android APK
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
+
+      - name: Gerar Estrutura Nativa e Dependências
+        run: |
+          cd mobile_app
+          # Gera o projeto Android/iOS oficial se não existir
+          flutter create --org br.uema.fastaccess --project-name uema_fast_access .
           
-      - name: Instalar Dependências
-        run: cd mobile_app && flutter pub get
-        
-      - name: Compilar APK Android
-        run: cd mobile_app && flutter build apk --release
-        
-      - name: Disponibilizar APK para Download
-        uses: actions/upload-artifact@v3
+          # Injeta permissão de tráfego HTTP limpo no AndroidManifest.xml (necessário para o IP 172.25.50.10)
+          sed -i 's/<application/<application android:usesCleartextTraffic="true"/' android/app/src/main/AndroidManifest.xml
+          
+          flutter pub get
+
+      - name: Compilar APK Android (Release)
+        run: |
+          cd mobile_app
+          flutter build apk --release
+
+      - name: Publicar APK para Download
+        uses: actions/upload-artifact@v4
         with:
           name: UEMA_FastAccess_Android_APK
           path: mobile_app/build/app/outputs/flutter-apk/app-release.apk
 
   # ==========================================
-  # 2. GERA O EXECUTÁVEL DO IPHONE (iOS)
+  # 2. GERAÇÃO AUTOMATIZADA DO APP iOS
   # ==========================================
   build-ios:
     name: Build iOS App
-    runs-on: macos-latest # O GitHub empresta um Mac na nuvem para compilar
+    runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
-      
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.19.0'
           channel: 'stable'
+
+      - name: Gerar Estrutura Nativa e Permitir HTTP
+        run: |
+          cd mobile_app
+          flutter create --org br.uema.fastaccess --project-name uema_fast_access .
           
-      - name: Instalar Dependências
-        run: cd mobile_app && flutter pub get
-        
-      - name: Compilar App iOS (Sem assinatura da Apple)
-        run: cd mobile_app && flutter build ios --release --no-codesign
-        
-      - name: Zipar Executável iOS
-        run: cd mobile_app/build/ios/iphoneos && zip -r Runner.zip Runner.app
-        
-      - name: Disponibilizar iOS para Download
-        uses: actions/upload-artifact@v3
+          # Injeta permissão de tráfego HTTP no Info.plist do iOS (ATS Exception)
+          python3 -c "
+          import plistlib
+          p_path = 'ios/Runner/Info.plist'
+          with open(p_path, 'rb') as fp:
+              pl = plistlib.load(fp)
+          pl['NSAppTransportSecurity'] = {'NSAllowsArbitraryLoads': True}
+          with open(p_path, 'wb') as fp:
+              plistlib.dump(pl, fp)
+          "
+          flutter pub get
+
+      - name: Compilar App iOS
+        run: |
+          cd mobile_app
+          flutter build ios --release --no-codesign
+
+      - name: Compactar Executável iOS
+        run: |
+          cd mobile_app/build/ios/iphoneos
+          zip -r Runner.zip Runner.app
+
+      - name: Publicar iOS para Download
+        uses: actions/upload-artifact@v4
         with:
           name: UEMA_FastAccess_iOS_APP
           path: mobile_app/build/ios/iphoneos/Runner.zip

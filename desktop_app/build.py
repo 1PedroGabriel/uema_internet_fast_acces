@@ -3,28 +3,31 @@ import subprocess
 import sys
 
 def build():
-    print("Iniciando a compilação do executável UEMA Fast Access...")
+    print("=======================================================")
+    print("Compilando Executável Profissional UEMA FastAccess")
+    print("=======================================================\n")
     
-    # Verifica se os requisitos estão instalados
-    print("1. Instalando/Verificando dependências...")
+    print("1. Verificando e instalando dependências...")
     subprocess.check_call([sys.executable, "-m", "pip", "install", "-r", "requirements.txt"])
     
-    # Comando do PyInstaller
-    # --noconsole: Executa em background (sem terminal preto irritante)
-    # --onefile: Empacota tudo em um único .exe
-    # --name: Nome do aplicativo gerado
-    print("2. Construindo o executável com PyInstaller...")
-    subprocess.check_call([
+    print("\n2. Executando PyInstaller com backends do Windows Vault...")
+    cmd = [
         "pyinstaller",
         "--noconsole",
         "--onefile",
-        "--name", "UEMA_Internet_FastAccess",
+        "--name=UEMA_Internet_FastAccess",
+        "--hidden-import=keyring.backends.Windows",
+        "--hidden-import=winreg",
+        "--collect-all=keyring",
+        "--collect-all=plyer",
         "main.py"
-    ])
+    ]
+    
+    subprocess.check_call(cmd)
     
     print("\n=======================================================")
-    print("CONCLUÍDO! O seu executável está na pasta 'dist/'.")
-    print("Você pode distribuir o arquivo 'UEMA_Internet_FastAccess.exe' para os usuários.")
+    print("BUILD CONCLUÍDO COM SUCESSO!")
+    print("O executável final está em: desktop_app/dist/UEMA_Internet_FastAccess.exe")
     print("=======================================================")
 
 if __name__ == "__main__":
