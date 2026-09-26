@@ -95,8 +95,29 @@ def generate_master():
     print(f"Ícone mestre: {MASTER_ICON}")
 
 
+def generate_feature_graphic():
+    """Imagem de destaque 1024x500 exigida na ficha da Play Store."""
+    w, h = 1024, 500
+    img = Image.new("RGB", (w, h), BG)
+    d = ImageDraw.Draw(img)
+
+    # Logo à esquerda
+    logo = draw_logo(360, rounded=True)
+    img.paste(logo, (70, 70), logo)
+
+    # Texto à direita (fonte padrão do Pillow; trocável por .ttf se desejado)
+    d.text((480, 190), "FastAccess", fill=(255, 255, 255))
+    d.text((480, 230), "Wi-Fi da UEMA sem login repetitivo", fill=ARC)
+
+    out = os.path.join(ROOT, "mobile_app", "assets", "feature_graphic.png")
+    os.makedirs(os.path.dirname(out), exist_ok=True)
+    img.save(out)
+    print(f"Imagem de destaque Play Store: {out}")
+
+
 if __name__ == "__main__":
     generate_master()
     generate_android()
     generate_ios()
+    generate_feature_graphic()
     print("Concluído.")
